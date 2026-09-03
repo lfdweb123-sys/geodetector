@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { createProject } from './actions';
+import { CountrySelect } from './CountrySelect';
 
 export default async function ProjectsPage() {
   const user = await getCurrentUser();
@@ -54,8 +55,10 @@ export default async function ProjectsPage() {
             <option value="HIGH_SECURITY">HIGH_SECURITY</option>
             <option value="CUSTOM">CUSTOM</option>
           </select>
-          <label className="label">Allowed countries (ISO2, comma-separated)</label>
-          <input name="allowedCountries" className="input mb-4" placeholder="BJ" />
+          <label className="label">Allowed countries</label>
+          <div className="mb-4">
+            <CountrySelect name="allowedCountries" />
+          </div>
           <label className="mb-4 flex items-center gap-2 text-sm">
             <input type="checkbox" name="requireLocation" defaultChecked className="h-4 w-4" />
             Require GPS location

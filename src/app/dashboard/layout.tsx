@@ -8,7 +8,7 @@ const NAV = [
   { href: '/dashboard/verifications', label: 'Verifications' },
   { href: '/dashboard/projects', label: 'Projects' },
   { href: '/dashboard/api-keys', label: 'API Keys' },
-  { href: '/dashboard/sdk', label: 'SDK' },
+  { href: '/dashboard/sdk', label: 'SDK & Tests' },
   { href: '/dashboard/usage', label: 'Usage' },
   { href: '/dashboard/logs', label: 'Logs' },
   { href: '/dashboard/billing', label: 'Billing' },

@@ -19,11 +19,7 @@ export async function createProject(formData: FormData) {
     | 'STRICT'
     | 'HIGH_SECURITY'
     | 'CUSTOM';
-  const allowedCountriesRaw = String(formData.get('allowedCountries') ?? '');
-  const allowedCountries = allowedCountriesRaw
-    .split(',')
-    .map((c) => c.trim().toUpperCase())
-    .filter(Boolean);
+  const allowedCountries = formData.getAll('allowedCountries').map((c) => String(c).toUpperCase());
   const requireLocation = formData.get('requireLocation') === 'on';
 
   const project = await prisma.project.create({
@@ -63,10 +59,7 @@ export async function updateProjectSettings(projectId: string, formData: FormDat
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project || project.organizationId !== user.organizationId) throw new Error('Project not found');
 
-  const allowedCountries = String(formData.get('allowedCountries') ?? '')
-    .split(',')
-    .map((c) => c.trim().toUpperCase())
-    .filter(Boolean);
+  const allowedCountries = formData.getAll('allowedCountries').map((c) => String(c).toUpperCase());
 
   await prisma.project.update({
     where: { id: projectId },

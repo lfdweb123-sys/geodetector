@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { updateProjectSettings } from '../actions';
+import { CountrySelect } from '../CountrySelect';
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
@@ -31,6 +32,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           <Link href={`/dashboard/verifications?projectId=${project.id}`} className="btn-secondary text-xs">
             Verifications
           </Link>
+          <Link href={`/dashboard/sdk?projectId=${project.id}`} className="btn-secondary text-xs">
+            Créer un test
+          </Link>
         </nav>
       </div>
 
@@ -56,8 +60,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         </div>
 
         <div>
-          <label className="label">Allowed countries (ISO2, comma-separated, empty = any)</label>
-          <input name="allowedCountries" defaultValue={project.allowedCountries.join(', ')} className="input" />
+          <label className="label">Allowed countries</label>
+          <CountrySelect name="allowedCountries" defaultValue={project.allowedCountries} />
         </div>
 
         <label className="flex items-center gap-2 text-sm">

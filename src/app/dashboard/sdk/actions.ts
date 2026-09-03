@@ -20,6 +20,7 @@ import type { DeviceIntegrityStatus, MockLocationStatus } from '@/lib/engine/typ
 export async function runTestVerification(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) throw new Error('Not authenticated');
+  if (user.role === 'MEMBER') throw new Error('Insufficient permissions to run a test verification');
 
   const projectId = String(formData.get('projectId') ?? '');
   const project = await prisma.project.findUnique({ where: { id: projectId } });

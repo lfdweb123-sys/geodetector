@@ -26,15 +26,16 @@ const CURL_SNIPPET = `curl -X POST https://your-deployment.vercel.app/v1/verific
     "client": { "timezone": "Africa/Porto-Novo", "language": "fr-BJ" }
   }'`;
 
-export default async function SdkPage() {
+export default async function SdkPage({ searchParams }: { searchParams: { projectId?: string } }) {
   const user = await getCurrentUser();
   const projects = await prisma.project.findMany({ where: { organizationId: user!.organizationId } });
+  const defaultProjectId = searchParams.projectId ?? projects[0]?.id;
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">SDK &amp; Playground</h1>
-        <p className="text-slate-500">Integration snippets, plus a live tester that runs the real detection pipeline.</p>
+        <h1 className="text-2xl font-semibold">SDK &amp; Tests</h1>
+        <p className="text-slate-500">Extraits d'intégration, et un testeur en direct qui exécute le vrai pipeline de détection.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -53,19 +54,22 @@ export default async function SdkPage() {
       </div>
 
       <div className="card">
-        <h2 className="mb-1 text-lg font-medium">Live playground</h2>
+        <h2 className="mb-1 text-lg font-medium">Créer un test</h2>
         <p className="mb-4 text-sm text-slate-500">
-          Runs the exact same evidence/scoring/decision/rules pipeline as the public API, including live IP
-          intelligence and reverse-geocoding lookups. Optionally override the IP to simulate a VPN/Tor/datacenter
-          exit node.
+          Exécute le même pipeline preuves/scoring/décision/règles que l'API publique, avec de vraies recherches
+          d'intelligence IP et de géocodage inversé. Vous pouvez remplacer l'IP pour simuler un nœud VPN/Tor/datacenter.
         </p>
-        {projects.length === 0 ? (
-          <p className="text-sm text-slate-500">Create a project first.</p>
+        {user!.role === 'MEMBER' ? (
+          <p className="text-sm text-slate-500">
+            Seuls les rôles OWNER et ADMIN peuvent créer des tests. Demandez au propriétaire de votre organisation.
+          </p>
+        ) : projects.length === 0 ? (
+          <p className="text-sm text-slate-500">Créez d'abord un projet.</p>
         ) : (
           <form action={runTestVerification} className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label">Project</label>
-              <select name="projectId" className="input" required>
+              <label className="label">Projet</label>
+              <select name="projectId" defaultValue={defaultProjectId} className="input" required>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
