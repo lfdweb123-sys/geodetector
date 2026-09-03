@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: GeoLock API
+  version: '1.0'
+  description: >
+    Multi-signal location verification API. GeoLock combines GPS, IP
+    intelligence, timezone/language context and device signals into an
+    explainable confidence score - it never asserts a location with absolute
+    certainty and always exposes the evidence behind a decision.
+servers:
+  - url: https://your-deployment.vercel.app/v1
+security:
+  - bearerAuth: []
+paths:
+  /verifications:
+    post:
+      summary: Create a location verification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVerificationRequest'
+      responses:
+        '201':
+          description: Verification created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+        '401':
+          description: Missing/invalid API key or signature
+        '409':
+          description: Replayed request (nonce already used)
+        '422':
+          description: Invalid request body
+        '429':
+          description: Rate limit exceeded
+  /verifications/{id}:
+    get:
+      summary: Retrieve a verification by ID
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      responses:
+        '200':
+          description: Verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+        '404':
+          description: Not found
+  /verifications/{id}/evidence:
+    get:
+      summary: Retrieve the full evidence trail for a verification
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      responses:
+        '200':
+          description: Evidence trail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceResponse'
+  /projects:
+    get:
+      summary: List projects (dashboard session auth)
+      responses:
+        '200':
+          description: Projects
+    post:
+      summary: Create a project (dashboard session auth)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+  /api-keys:
+    get:
+      summary: List API keys (dashboard session auth)
+      responses:
+        '200':
+          description: API keys (hashed - raw key never returned again)
+    post:
+      summary: Create an API key (dashboard session auth). The raw key is returned once.
+      responses:
+        '201':
+          description: API key created
+  /usage:
+    get:
+      summary: Get verification usage for the authenticated project
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Usage summary
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Project API key. Requests may additionally be signed (see
+        docs/SECURITY.md) via X-GeoLock-Signature / X-GeoLock-Timestamp /
+        X-GeoLock-Nonce headers for full anti-replay + tamper protection.
+  parameters:
+    VerificationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    Gps:
+      type: object
+      required: [latitude, longitude, accuracy, timestamp]
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+        accuracy:
+          type: number
+          description: meters
+        timestamp:
+          type: integer
+          description: unix ms
+        altitude:
+          type: number
+          nullable: true
+        speed:
+          type: number
+          nullable: true
+    CreateVerificationRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id:
+          type: string
+        required_country:
+          type: string
+          description: ISO 3166-1 alpha-2
+        location:
+          allOf:
+            - $ref: '#/components/schemas/Gps'
+          nullable: true
+        location_permission_denied:
+          type: boolean
+        client:
+          type: object
+          properties:
+            timezone:
+              type: string
+            language:
+              type: string
+        device:
+          type: object
+          properties:
+            mockLocationStatus:
+              type: string
+              enum: [DETECTED, NOT_DETECTED, UNAVAILABLE]
+            integrity:
+              type: string
+              enum: [PHYSICAL, EMULATOR_SUSPECTED, COMPROMISED_SUSPECTED, UNAVAILABLE]
+    VerificationResult:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [VERIFIED, SUSPICIOUS, UNVERIFIED]
+        decision:
+          type: string
+          enum: [ACCEPT, REJECT, MANUAL_REVIEW]
+        location:
+          type: object
+          properties:
+            country:
+              type: string
+              nullable: true
+            region:
+              type: string
+              nullable: true
+            city:
+              type: string
+              nullable: true
+        confidence:
+          type: integer
+          minimum: 0
+          maximum: 100
+        vpn:
+          type: boolean
+        proxy:
+          type: boolean
+        tor:
+          type: boolean
+        datacenter:
+          type: boolean
+        mock_location:
+          type: string
+          enum: [DETECTED, NOT_DETECTED, UNAVAILABLE]
+        reasons:
+          type: array
+          items:
+            type: string
+        token:
+          type: string
+          description: Short-lived, single-use anti-replay confirmation token.
+        expires_at:
+          type: string
+          format: date-time
+    EvidenceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        confidence:
+          type: integer
+        evidence:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              category:
+                type: string
+              contribution:
+                type: number
+              reliability:
+                type: number
+              source:
+                type: string
+              reason:
+                type: string
+        rule_trace:
+          type: object
+          nullable: true
+    CreateProjectRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [STANDARD, STRICT, HIGH_SECURITY, CUSTOM]
+        allowedCountries:
+          type: array
+          items:
+            type: string
+        requireLocation:
+          type: boolean

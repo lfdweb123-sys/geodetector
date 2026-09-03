@@ -1,0 +1,331 @@
+// GeoLock data model
+// Postgres is the target datasource (Vercel Postgres / Neon / Supabase / RDS all work unmodified).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+model Organization {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  plan              Plan     @default(FREE)
+  billingEmail      String?
+  // Privacy-by-design: how long raw verification evidence is retained before hard delete.
+  dataRetentionDays Int      @default(90)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  users     User[]
+  projects  Project[]
+  auditLogs AuditLog[]
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String       @unique
+  passwordHash   String
+  name           String?
+  role           Role         @default(MEMBER)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Projects
+// ---------------------------------------------------------------------------
+
+enum ProjectMode {
+  STANDARD
+  STRICT
+  HIGH_SECURITY
+  CUSTOM
+}
+
+model Project {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  mode           ProjectMode  @default(STANDARD)
+
+  // Policy configuration
+  allowedCountries String[] // ISO 3166-1 alpha-2. Empty = any country allowed.
+  requireLocation  Boolean  @default(true)
+  maxAccuracyMeters Int?    @default(150) // reject/penalize GPS fixes coarser than this
+  maxLocationAgeSec Int?    @default(120) // reject/penalize stale fixes
+  minConfidence     Int     @default(70) // ACCEPT threshold, also used by rules
+
+  ipIntelProvider  String  @default("ipapi")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scoringConfigs ScoringConfig[]
+  apiKeys        ApiKey[]
+  rules          Rule[]
+  verifications  Verification[]
+  webhooks       Webhook[]
+  usageRecords   UsageRecord[]
+
+  @@index([organizationId])
+}
+
+// Configurable scoring weights, versioned so a dashboard edit never mutates history
+// used to explain past decisions.
+model ScoringConfig {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version   Int
+  isActive  Boolean @default(true)
+
+  // Json shape: Record<SignalKey, number> - see src/lib/engine/scoring.ts DEFAULT_WEIGHTS
+  weights Json
+
+  // Json shape: { verifiedMin: number, suspiciousMin: number }
+  thresholds Json
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, version])
+  @@index([projectId, isActive])
+}
+
+// ---------------------------------------------------------------------------
+// API keys
+// ---------------------------------------------------------------------------
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name       String
+  // Visible, non-secret prefix shown in the dashboard, e.g. "gl_live_ab12"
+  prefix     String
+  // SHA-256 hash of the full secret key. The raw key is shown once at creation and never stored.
+  hashedKey  String    @unique
+  // Optional HMAC signing secret for request-signature verification (section 21).
+  hmacSecret String
+  scopes     String[]  @default(["verify:write", "verify:read"])
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([projectId])
+}
+
+// ---------------------------------------------------------------------------
+// Rules engine
+// ---------------------------------------------------------------------------
+
+enum RuleAction {
+  ALLOW
+  BLOCK
+  MANUAL_REVIEW
+}
+
+model Rule {
+  id        String     @id @default(cuid())
+  projectId String
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  // Json AST - see src/lib/engine/rulesEngine.ts for the condition grammar.
+  condition Json
+  action    RuleAction
+  priority  Int        @default(0)
+  enabled   Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([projectId, enabled, priority])
+}
+
+// ---------------------------------------------------------------------------
+// Verifications & evidence
+// ---------------------------------------------------------------------------
+
+enum VerificationStatus {
+  VERIFIED
+  SUSPICIOUS
+  UNVERIFIED
+}
+
+enum Decision {
+  ACCEPT
+  REJECT
+  MANUAL_REVIEW
+}
+
+enum MockLocationStatus {
+  DETECTED
+  NOT_DETECTED
+  UNAVAILABLE
+}
+
+model Verification {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sessionId       String
+  requiredCountry String?
+
+  status   VerificationStatus
+  decision Decision
+  confidence Int
+
+  locationCountry String?
+  locationRegion  String?
+  locationCity    String?
+  locationLat     Float?
+  locationLng     Float?
+  locationAccuracyM Float?
+
+  ip              String?
+  ipCountry       String?
+  vpnDetected       Boolean @default(false)
+  proxyDetected     Boolean @default(false)
+  torDetected       Boolean @default(false)
+  datacenterDetected Boolean @default(false)
+
+  mockLocationStatus MockLocationStatus @default(UNAVAILABLE)
+  deviceIntegrity    String? // PHYSICAL | EMULATOR_SUSPECTED | COMPROMISED_SUSPECTED | UNAVAILABLE
+
+  timezone String?
+  language String?
+
+  reasons Json // string[]
+  signals Json // full Evidence[] snapshot for the /evidence endpoint
+
+  // Anti-replay: a short-lived, single-use token the client platform can hand back
+  // to the API to re-confirm this exact verification without accepting a stale one.
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  ruleTrace Json? // which rule (if any) determined the final decision
+
+  createdAt DateTime @default(now())
+
+  webhookDeliveries WebhookDelivery[]
+
+  @@index([projectId, createdAt])
+  @@index([projectId, sessionId])
+}
+
+// ---------------------------------------------------------------------------
+// Webhooks
+// ---------------------------------------------------------------------------
+
+model Webhook {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url       String
+  secret    String
+  events    String[] // verification.completed | verification.verified | verification.suspicious | verification.rejected
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  deliveries WebhookDelivery[]
+
+  @@index([projectId])
+}
+
+model WebhookDelivery {
+  id             String        @id @default(cuid())
+  webhookId      String
+  webhook        Webhook       @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  verificationId String
+  verification   Verification  @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  event          String
+  payload        Json
+  statusCode     Int?
+  attempts       Int           @default(0)
+  delivered      Boolean       @default(false)
+  lastAttemptAt  DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([webhookId])
+  @@index([delivered, attempts])
+}
+
+// ---------------------------------------------------------------------------
+// Usage / billing
+// ---------------------------------------------------------------------------
+
+model UsageRecord {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  day       DateTime // truncated to date
+  count     Int      @default(0)
+
+  @@unique([projectId, day])
+  @@index([projectId, day])
+}
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  action         String
+  targetType     String
+  targetId       String?
+  metadata       Json?
+  ip             String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Replay protection
+// ---------------------------------------------------------------------------
+
+// Durable fallback nonce store (primary store is Redis when configured - see
+// src/lib/security/replay.ts). Kept here so anti-replay still works with a
+// single-region Postgres-only deployment.
+model UsedNonce {
+  id        String   @id @default(cuid())
+  projectId String
+  nonce     String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([projectId, nonce])
+  @@index([expiresAt])
+}
