@@ -6,8 +6,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled (pgbouncer) connection - used at runtime by serverless functions.
+  url       = env("DATABASE_URL")
+  // Direct (non-pooling) connection - required by `prisma migrate` for DDL,
+  // since pgbouncer's transaction pooling mode cannot run migrations
+  // reliably. Needed for Supabase; harmless/optional for providers without a
+  // pooler (Neon, Vercel Postgres) since it can just equal DATABASE_URL there.
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------------------
