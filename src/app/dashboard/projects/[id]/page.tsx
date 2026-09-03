@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { updateProjectSettings } from '../actions';
 import { CountrySelect } from '../CountrySelect';
+import { FormWithToast } from '../../FormWithToast';
+import { BackLink } from '../../BackLink';
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
@@ -14,6 +16,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
 
   return (
     <div className="space-y-8">
+      <BackLink href="/dashboard/projects" label="Retour aux projets" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{project.name}</h1>
@@ -38,7 +41,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         </nav>
       </div>
 
-      <form action={updateAction} className="card max-w-2xl space-y-4">
+      <FormWithToast action={updateAction} submitLabel="Save settings" className="card max-w-2xl space-y-4">
         <h2 className="text-lg font-medium">Policy settings</h2>
 
         <div>
@@ -97,11 +100,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             <option value="ipinfo">ipinfo.io (requires IPINFO_TOKEN)</option>
           </select>
         </div>
-
-        <button type="submit" className="btn-primary">
-          Save settings
-        </button>
-      </form>
+      </FormWithToast>
     </div>
   );
 }

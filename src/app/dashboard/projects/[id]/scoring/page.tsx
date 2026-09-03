@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { DEFAULT_THRESHOLDS, DEFAULT_WEIGHTS, type ScoringWeights } from '@/lib/engine/types';
 import { updateScoringConfig } from './actions';
+import { FormWithToast } from '../../../FormWithToast';
+import { BackLink } from '../../../BackLink';
 
 const LABELS: Record<keyof ScoringWeights, string> = {
   gps_precise: 'GPS is precise',
@@ -47,6 +49,7 @@ export default async function ScoringPage({ params }: { params: { id: string } }
 
   return (
     <div className="space-y-8">
+      <BackLink href={`/dashboard/projects/${project.id}`} label={`Retour à ${project.name}`} />
       <div>
         <h1 className="text-2xl font-semibold">Scoring weights — {project.name}</h1>
         <p className="text-slate-500">
@@ -55,7 +58,7 @@ export default async function ScoringPage({ params }: { params: { id: string } }
         </p>
       </div>
 
-      <form action={action} className="card max-w-3xl space-y-6">
+      <FormWithToast action={action} submitLabel="Publish new scoring version" className="card max-w-3xl space-y-6">
         <div>
           <h2 className="mb-3 text-lg font-medium">Decision thresholds</h2>
           <div className="grid grid-cols-2 gap-4">
@@ -81,11 +84,7 @@ export default async function ScoringPage({ params }: { params: { id: string } }
             ))}
           </div>
         </div>
-
-        <button type="submit" className="btn-primary">
-          Publish new scoring version
-        </button>
-      </form>
+      </FormWithToast>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { ruleConditionSchema } from '@/lib/validation/schemas';
 import { logAudit } from '@/lib/audit';
+import type { ActionState } from '../../../FormWithToast';
 
 async function assertOwnership(projectId: string) {
   const user = await getCurrentUser();
@@ -14,7 +15,7 @@ async function assertOwnership(projectId: string) {
   return user;
 }
 
-export async function createRule(projectId: string, formData: FormData) {
+export async function createRule(projectId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await assertOwnership(projectId);
 
   const name = String(formData.get('name') ?? '').trim();
@@ -22,14 +23,16 @@ export async function createRule(projectId: string, formData: FormData) {
   const priority = Number(formData.get('priority') ?? 0);
   const conditionRaw = String(formData.get('condition') ?? '{}');
 
+  if (!name) return { ok: false, message: 'Le nom de la règle est requis.' };
+
   let condition: unknown;
   try {
     condition = JSON.parse(conditionRaw);
   } catch {
-    throw new Error('Condition must be valid JSON');
+    return { ok: false, message: 'La condition doit être un JSON valide.' };
   }
   const parsed = ruleConditionSchema.safeParse(condition);
-  if (!parsed.success) throw new Error('Invalid rule condition shape');
+  if (!parsed.success) return { ok: false, message: 'Forme de condition invalide.' };
 
   const rule = await prisma.rule.create({
     data: { projectId, name, action, priority, condition: parsed.data as never },
@@ -44,17 +47,30 @@ export async function createRule(projectId: string, formData: FormData) {
   });
 
   revalidatePath(`/dashboard/projects/${projectId}/rules`);
+  return { ok: true, message: `Règle "${name}" créée.` };
 }
 
-export async function toggleRule(projectId: string, ruleId: string) {
+export async function toggleRule(
+  projectId: string,
+  ruleId: string,
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
   await assertOwnership(projectId);
   const rule = await prisma.rule.findUniqueOrThrow({ where: { id: ruleId } });
-  await prisma.rule.update({ where: { id: ruleId }, data: { enabled: !rule.enabled } });
+  const updated = await prisma.rule.update({ where: { id: ruleId }, data: { enabled: !rule.enabled } });
   revalidatePath(`/dashboard/projects/${projectId}/rules`);
+  return { ok: true, message: updated.enabled ? `Règle "${updated.name}" activée.` : `Règle "${updated.name}" désactivée.` };
 }
 
-export async function deleteRule(projectId: string, ruleId: string) {
+export async function deleteRule(
+  projectId: string,
+  ruleId: string,
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
   await assertOwnership(projectId);
-  await prisma.rule.delete({ where: { id: ruleId } });
+  const rule = await prisma.rule.delete({ where: { id: ruleId } });
   revalidatePath(`/dashboard/projects/${projectId}/rules`);
+  return { ok: true, message: `Règle "${rule.name}" supprimée.` };
 }

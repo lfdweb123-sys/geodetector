@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { createRule, deleteRule, toggleRule } from './actions';
+import { ActionButton, FormWithToast } from '../../../FormWithToast';
+import { BackLink } from '../../../BackLink';
 
 const EXAMPLE_CONDITION = JSON.stringify(
   { and: [{ field: 'vpn', op: 'eq', value: true }, { field: 'confidence', op: 'lt', value: 70 }] },
@@ -19,6 +21,7 @@ export default async function RulesPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="space-y-8">
+      <BackLink href={`/dashboard/projects/${project.id}`} label={`Retour à ${project.name}`} />
       <div>
         <h1 className="text-2xl font-semibold">Rules — {project.name}</h1>
         <p className="text-slate-500">
@@ -46,16 +49,19 @@ export default async function RulesPage({ params }: { params: { id: string } }) 
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <form action={toggleRule.bind(null, project.id, rule.id)}>
-                        <button type="submit" className="btn-secondary text-xs">
-                          {rule.enabled ? 'Disable' : 'Enable'}
-                        </button>
-                      </form>
-                      <form action={deleteRule.bind(null, project.id, rule.id)}>
-                        <button type="submit" className="btn-danger text-xs">
-                          Delete
-                        </button>
-                      </form>
+                      <ActionButton
+                        action={toggleRule.bind(null, project.id, rule.id)}
+                        label={rule.enabled ? 'Disable' : 'Enable'}
+                        pendingLabel="…"
+                        className="text-xs"
+                      />
+                      <ActionButton
+                        action={deleteRule.bind(null, project.id, rule.id)}
+                        label="Delete"
+                        pendingLabel="…"
+                        variant="danger"
+                        className="text-xs"
+                      />
                     </div>
                   </div>
                   <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-2 text-xs">
@@ -67,7 +73,7 @@ export default async function RulesPage({ params }: { params: { id: string } }) 
           )}
         </div>
 
-        <form action={createAction} className="card">
+        <FormWithToast action={createAction} className="card" submitLabel="Add rule" buttonClassName="btn-primary w-full">
           <h2 className="mb-4 text-lg font-medium">New rule</h2>
           <label className="label">Name</label>
           <input name="name" required className="input mb-4" placeholder="Block non-BJ" />
@@ -86,10 +92,7 @@ export default async function RulesPage({ params }: { params: { id: string } }) 
             mockLocation, mockLocationStatus, deviceIntegrity, gpsAccuracyMeters. Operators: eq, ne, gt, gte, lt, lte,
             in, not_in. Combine with {'{ and: [...] }'}, {'{ or: [...] }'}, {'{ not: {...} }'}.
           </p>
-          <button type="submit" className="btn-primary w-full">
-            Add rule
-          </button>
-        </form>
+        </FormWithToast>
       </div>
     </div>
   );

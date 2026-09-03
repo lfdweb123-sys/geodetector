@@ -4,11 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
+import type { ActionState } from '../FormWithToast';
 
-export async function updateOrganizationSettings(formData: FormData) {
+export async function updateOrganizationSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
-  if (user.role !== 'OWNER') throw new Error('Only the organization owner can change these settings');
+  if (!user) return { ok: false, message: 'Non authentifié.' };
+  if (user.role !== 'OWNER') {
+    return { ok: false, message: 'Seul le propriétaire de l’organisation peut modifier ces réglages.' };
+  }
 
   const name = String(formData.get('name') ?? '').trim();
   const billingEmail = String(formData.get('billingEmail') ?? '').trim() || null;
@@ -28,4 +31,5 @@ export async function updateOrganizationSettings(formData: FormData) {
   });
 
   revalidatePath('/dashboard/settings');
+  return { ok: true, message: 'Réglages enregistrés.' };
 }

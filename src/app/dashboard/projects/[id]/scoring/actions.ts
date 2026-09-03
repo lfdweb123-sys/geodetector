@@ -6,12 +6,19 @@ import { getCurrentUser } from '@/lib/session';
 import { DEFAULT_WEIGHTS, type ScoringWeights } from '@/lib/engine/types';
 import { logAudit } from '@/lib/audit';
 import type { Prisma } from '@prisma/client';
+import type { ActionState } from '../../../FormWithToast';
 
-export async function updateScoringConfig(projectId: string, formData: FormData) {
+export async function updateScoringConfig(
+  projectId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) return { ok: false, message: 'Non authentifié.' };
   const project = await prisma.project.findUnique({ where: { id: projectId } });
-  if (!project || project.organizationId !== user.organizationId) throw new Error('Project not found');
+  if (!project || project.organizationId !== user.organizationId) {
+    return { ok: false, message: 'Projet introuvable.' };
+  }
 
   const weights = {} as ScoringWeights;
   for (const key of Object.keys(DEFAULT_WEIGHTS) as (keyof ScoringWeights)[]) {
@@ -49,4 +56,5 @@ export async function updateScoringConfig(projectId: string, formData: FormData)
   });
 
   revalidatePath(`/dashboard/projects/${projectId}/scoring`);
+  return { ok: true, message: `Version ${nextVersion} des poids de scoring publiée.` };
 }

@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/session';
 import { DEFAULT_THRESHOLDS, DEFAULT_WEIGHTS } from '@/lib/engine/types';
 import { logAudit } from '@/lib/audit';
 import type { Prisma } from '@prisma/client';
+import type { ActionState } from '../FormWithToast';
 
 export async function createProject(formData: FormData) {
   const user = await getCurrentUser();
@@ -52,27 +53,37 @@ export async function createProject(formData: FormData) {
   redirect(`/dashboard/projects/${project.id}`);
 }
 
-export async function updateProjectSettings(projectId: string, formData: FormData) {
+export async function updateProjectSettings(
+  projectId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) return { ok: false, message: 'Non authentifié.' };
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
-  if (!project || project.organizationId !== user.organizationId) throw new Error('Project not found');
+  if (!project || project.organizationId !== user.organizationId) {
+    return { ok: false, message: 'Projet introuvable.' };
+  }
 
   const allowedCountries = formData.getAll('allowedCountries').map((c) => String(c).toUpperCase());
 
-  await prisma.project.update({
-    where: { id: projectId },
-    data: {
-      name: String(formData.get('name') ?? project.name),
-      mode: String(formData.get('mode') ?? project.mode) as typeof project.mode,
-      allowedCountries,
-      requireLocation: formData.get('requireLocation') === 'on',
-      maxAccuracyMeters: Number(formData.get('maxAccuracyMeters') ?? project.maxAccuracyMeters),
-      maxLocationAgeSec: Number(formData.get('maxLocationAgeSec') ?? project.maxLocationAgeSec),
-      ipIntelProvider: String(formData.get('ipIntelProvider') ?? project.ipIntelProvider),
-    },
-  });
+  try {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        name: String(formData.get('name') ?? project.name),
+        mode: String(formData.get('mode') ?? project.mode) as typeof project.mode,
+        allowedCountries,
+        requireLocation: formData.get('requireLocation') === 'on',
+        maxAccuracyMeters: Number(formData.get('maxAccuracyMeters') ?? project.maxAccuracyMeters),
+        maxLocationAgeSec: Number(formData.get('maxLocationAgeSec') ?? project.maxLocationAgeSec),
+        ipIntelProvider: String(formData.get('ipIntelProvider') ?? project.ipIntelProvider),
+      },
+    });
+  } catch {
+    return { ok: false, message: "Échec de l'enregistrement des réglages." };
+  }
 
   await logAudit({
     organizationId: user.organizationId,
@@ -83,4 +94,5 @@ export async function updateProjectSettings(projectId: string, formData: FormDat
   });
 
   revalidatePath(`/dashboard/projects/${projectId}`);
+  return { ok: true, message: 'Réglages du projet enregistrés.' };
 }

@@ -2,15 +2,18 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { ApiKeyCreateForm } from './ApiKeyCreateForm';
 import { revokeApiKeyAction } from './actions';
+import { ActionButton } from '../FormWithToast';
 
 export default async function ApiKeysPage() {
   const user = await getCurrentUser();
-  const projects = await prisma.project.findMany({ where: { organizationId: user!.organizationId } });
-  const keys = await prisma.apiKey.findMany({
-    where: { project: { organizationId: user!.organizationId } },
-    include: { project: { select: { name: true } } },
-    orderBy: { createdAt: 'desc' },
-  });
+  const [projects, keys] = await Promise.all([
+    prisma.project.findMany({ where: { organizationId: user!.organizationId } }),
+    prisma.apiKey.findMany({
+      where: { project: { organizationId: user!.organizationId } },
+      include: { project: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -55,11 +58,13 @@ export default async function ApiKeysPage() {
                       </td>
                       <td className="py-2 text-right">
                         {!k.revokedAt && (
-                          <form action={revokeApiKeyAction.bind(null, k.id)}>
-                            <button type="submit" className="btn-danger text-xs">
-                              Revoke
-                            </button>
-                          </form>
+                          <ActionButton
+                            action={revokeApiKeyAction.bind(null, k.id)}
+                            label="Revoke"
+                            pendingLabel="…"
+                            variant="danger"
+                            className="text-xs"
+                          />
                         )}
                       </td>
                     </tr>

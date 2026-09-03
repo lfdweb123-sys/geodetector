@@ -1,11 +1,47 @@
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { updateOrganizationSettings } from './actions';
+import { FormWithToast } from '../FormWithToast';
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
-  const org = await prisma.organization.findUnique({ where: { id: user!.organizationId } });
-  const members = await prisma.user.findMany({ where: { organizationId: user!.organizationId } });
+  const [org, members] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: user!.organizationId } }),
+    prisma.user.findMany({ where: { organizationId: user!.organizationId } }),
+  ]);
+
+  const isOwner = user!.role === 'OWNER';
+  const fields = (
+    <>
+      <div>
+        <label className="label">Organization name</label>
+        <input name="name" defaultValue={org?.name} className="input" disabled={!isOwner} />
+      </div>
+      <div>
+        <label className="label">Billing email</label>
+        <input
+          name="billingEmail"
+          type="email"
+          defaultValue={org?.billingEmail ?? ''}
+          className="input"
+          disabled={!isOwner}
+        />
+      </div>
+      <div>
+        <label className="label">Data retention (days)</label>
+        <input
+          type="number"
+          name="dataRetentionDays"
+          defaultValue={org?.dataRetentionDays ?? 90}
+          className="input"
+          disabled={!isOwner}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Raw verification evidence (GPS coordinates, IP) is not kept longer than this window - privacy by design.
+        </p>
+      </div>
+    </>
+  );
 
   return (
     <div className="space-y-8">
@@ -14,35 +50,17 @@ export default async function SettingsPage() {
         <p className="text-slate-500">Organization: {org?.name}</p>
       </div>
 
-      <form action={updateOrganizationSettings} className="card max-w-lg space-y-4">
-        <h2 className="text-lg font-medium">Organization &amp; privacy</h2>
-        <div>
-          <label className="label">Organization name</label>
-          <input name="name" defaultValue={org?.name} className="input" disabled={user!.role !== 'OWNER'} />
+      {isOwner ? (
+        <FormWithToast action={updateOrganizationSettings} submitLabel="Save" className="card max-w-lg space-y-4">
+          <h2 className="text-lg font-medium">Organization &amp; privacy</h2>
+          {fields}
+        </FormWithToast>
+      ) : (
+        <div className="card max-w-lg space-y-4">
+          <h2 className="text-lg font-medium">Organization &amp; privacy</h2>
+          {fields}
         </div>
-        <div>
-          <label className="label">Billing email</label>
-          <input name="billingEmail" type="email" defaultValue={org?.billingEmail ?? ''} className="input" disabled={user!.role !== 'OWNER'} />
-        </div>
-        <div>
-          <label className="label">Data retention (days)</label>
-          <input
-            type="number"
-            name="dataRetentionDays"
-            defaultValue={org?.dataRetentionDays ?? 90}
-            className="input"
-            disabled={user!.role !== 'OWNER'}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            Raw verification evidence (GPS coordinates, IP) is not kept longer than this window - privacy by design.
-          </p>
-        </div>
-        {user!.role === 'OWNER' && (
-          <button type="submit" className="btn-primary">
-            Save
-          </button>
-        )}
-      </form>
+      )}
 
       <div className="card max-w-lg">
         <h2 className="mb-3 text-lg font-medium">Members</h2>

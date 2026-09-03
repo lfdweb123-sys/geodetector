@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { createWebhook, deleteWebhook } from './actions';
+import { ActionButton, FormWithToast } from '../../../FormWithToast';
+import { BackLink } from '../../../BackLink';
 
 const EVENTS = [
   'verification.completed',
@@ -20,6 +22,7 @@ export default async function WebhooksPage({ params }: { params: { id: string } 
 
   return (
     <div className="space-y-8">
+      <BackLink href={`/dashboard/projects/${project.id}`} label={`Retour à ${project.name}`} />
       <div>
         <h1 className="text-2xl font-semibold">Webhooks — {project.name}</h1>
         <p className="text-slate-500">Each delivery is HMAC-SHA256 signed with the webhook's secret in the X-GeoLock-Signature header.</p>
@@ -39,11 +42,13 @@ export default async function WebhooksPage({ params }: { params: { id: string } 
                       <p className="font-medium">{w.url}</p>
                       <p className="text-xs text-slate-500">{w.events.join(', ')}</p>
                     </div>
-                    <form action={deleteWebhook.bind(null, project.id, w.id)}>
-                      <button type="submit" className="btn-danger text-xs">
-                        Delete
-                      </button>
-                    </form>
+                    <ActionButton
+                      action={deleteWebhook.bind(null, project.id, w.id)}
+                      label="Delete"
+                      pendingLabel="…"
+                      variant="danger"
+                      className="text-xs"
+                    />
                   </div>
                 </li>
               ))}
@@ -51,7 +56,7 @@ export default async function WebhooksPage({ params }: { params: { id: string } 
           )}
         </div>
 
-        <form action={createAction} className="card">
+        <FormWithToast action={createAction} className="card" submitLabel="Add webhook" buttonClassName="btn-primary w-full">
           <h2 className="mb-4 text-lg font-medium">New webhook</h2>
           <label className="label">URL</label>
           <input name="url" type="url" required className="input mb-4" placeholder="https://example.com/hooks/geolock" />
@@ -64,10 +69,7 @@ export default async function WebhooksPage({ params }: { params: { id: string } 
               </label>
             ))}
           </div>
-          <button type="submit" className="btn-primary w-full">
-            Add webhook
-          </button>
-        </form>
+        </FormWithToast>
       </div>
     </div>
   );

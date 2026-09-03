@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
 import { StatusBadge } from '../StatusBadge';
 import type { Evidence } from '@/lib/engine/types';
+import { BackLink } from '../../BackLink';
 
 export default async function VerificationDetailPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
@@ -16,6 +17,7 @@ export default async function VerificationDetailPage({ params }: { params: { id:
 
   return (
     <div className="space-y-6">
+      <BackLink href={`/dashboard/verifications?projectId=${verification.projectId}`} label="Retour aux vérifications" />
       <div>
         <h1 className="font-mono text-xl font-semibold">{verification.id}</h1>
         <p className="text-slate-500">

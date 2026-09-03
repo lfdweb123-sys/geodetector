@@ -5,7 +5,7 @@
   "description": "GeoLock - Multi-signal location verification SaaS platform",
   "scripts": {
     "dev": "next dev",
-    "build": "npm run sdk:build && mkdir -p public && cp sdk/web/dist/geolock.umd.js public/geolock.umd.js && prisma generate && next build",
+    "build": "npm run sdk:build:umd && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
@@ -13,6 +13,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "sdk:build:umd": "mkdir -p public && esbuild sdk/web/src/index.ts --bundle --format=iife --global-name=GeoLockBundle --outfile=public/geolock.umd.js --footer:js=\"window.GeoLock = window.GeoLock || GeoLockBundle.default;\"",
     "sdk:build": "cd sdk/web && npm install && npm run build"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.28.2",
     "postcss": "^8.4.47",
     "prisma": "^5.20.0",
     "tailwindcss": "^3.4.13",

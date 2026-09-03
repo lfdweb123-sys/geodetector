@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createApiKeyAction } from './actions';
+import { useToast } from '../ToastProvider';
 
 type Project = { id: string; name: string };
 
@@ -21,6 +23,15 @@ export function ApiKeyCreateForm({ projects }: { projects: Project[] }) {
     const result = await createApiKeyAction(formData);
     return result ?? null;
   }, initialState);
+  const { showToast } = useToast();
+  const seen = useRef(state);
+
+  useEffect(() => {
+    if (state && state !== seen.current) {
+      seen.current = state;
+      showToast('Clé API créée.', 'success');
+    }
+  }, [state, showToast]);
 
   return (
     <div className="card">

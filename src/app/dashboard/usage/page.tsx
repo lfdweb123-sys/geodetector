@@ -6,8 +6,10 @@ import { UsageChart } from './UsageChart';
 
 export default async function UsagePage({ searchParams }: { searchParams: { projectId?: string } }) {
   const user = await getCurrentUser();
-  const org = await prisma.organization.findUnique({ where: { id: user!.organizationId } });
-  const projects = await prisma.project.findMany({ where: { organizationId: user!.organizationId } });
+  const [org, projects] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: user!.organizationId } }),
+    prisma.project.findMany({ where: { organizationId: user!.organizationId } }),
+  ]);
   const projectId = searchParams.projectId ?? projects[0]?.id;
 
   const since = new Date();

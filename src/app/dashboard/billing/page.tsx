@@ -12,12 +12,14 @@ const PAYMENT_STATUS_STYLE: Record<string, string> = {
 
 export default async function BillingPage() {
   const user = await getCurrentUser();
-  const org = await prisma.organization.findUnique({ where: { id: user!.organizationId } });
-  const payments = await prisma.payment.findMany({
-    where: { organizationId: user!.organizationId },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  });
+  const [org, payments] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: user!.organizationId } }),
+    prisma.payment.findMany({
+      where: { organizationId: user!.organizationId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    }),
+  ]);
 
   const currentPlanIndex = PLAN_CATALOG.findIndex((p) => p.id === org?.plan);
   const nextPlan = PLAN_CATALOG[currentPlanIndex + 1];
