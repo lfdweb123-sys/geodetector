@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
+import { planInfo } from '@/lib/billing';
 import { UsageChart } from './UsageChart';
 
 export default async function UsagePage({ searchParams }: { searchParams: { projectId?: string } }) {
@@ -20,8 +21,7 @@ export default async function UsagePage({ searchParams }: { searchParams: { proj
   const data = records.map((r) => ({ date: r.day.toISOString().slice(5, 10), count: r.count }));
   const total = records.reduce((s, r) => s + r.count, 0);
 
-  const QUOTA: Record<string, number> = { FREE: 1000, STARTER: 20000, PRO: 200000, BUSINESS: 2000000, ENTERPRISE: Infinity };
-  const quota = QUOTA[org?.plan ?? 'FREE'] ?? Infinity;
+  const quota = planInfo(org?.plan ?? 'FREE').quota;
 
   return (
     <div className="space-y-6">

@@ -96,6 +96,26 @@ capture and reuse forever:
 - Every attempt (success or failure, status code) is recorded in
   `WebhookDelivery` for observability.
 
+## Billing (Verzapay)
+
+- `VERZAPAY_SECRET_KEY` is server-only and used exclusively from
+  `src/lib/verzapay.ts` (a Server Action / Route Handler context) - it is
+  never sent to the browser.
+- **Known gap**: Verzapay's published API docs do not describe a webhook
+  signing secret or signature header, so `POST /api/webhooks/verzapay`
+  cannot cryptographically verify a request actually originated from
+  Verzapay. Mitigation in place: the handler only ever transitions a
+  `Payment` row it already created and that is still `PENDING`, matched by
+  the id Verzapay returned at checkout creation - a forged event naming an
+  unknown or already-settled payment id is a silent no-op, so the worst a
+  forged webhook can do is a wasted request. If Verzapay documents a signing
+  secret in the future, verify it here before trusting the payload.
+- Self-serve plan upgrades are restricted to `OWNER`s and to phone numbers
+  whose Verzapay-supported country currently has an active payment method
+  and a currency GeoLock's own pricing supports (XOF/XAF) - see
+  `src/lib/verzapayCountries.ts`. Other markets are directed to contact
+  sales rather than risk an incorrect currency conversion.
+
 ## Known dependency risk (action required before production)
 
 This build pins `next@14.2.35` (the latest 14.x patch at time of writing).

@@ -42,6 +42,7 @@ model Organization {
   users     User[]
   projects  Project[]
   auditLogs AuditLog[]
+  payments  Payment[]
 }
 
 enum Role {
@@ -297,6 +298,34 @@ model UsageRecord {
 
   @@unique([projectId, day])
   @@index([projectId, day])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// A plan-upgrade payment collected through Verzapay (https://www.verzapay.com).
+// One row per checkout attempt - `verzapayPaymentId` is the id Verzapay
+// returns from POST /payments, and is how incoming webhooks are matched back
+// to a pending upgrade.
+model Payment {
+  id                String        @id @default(cuid())
+  organizationId    String
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  verzapayPaymentId String        @unique
+  targetPlan        Plan
+  amount            Int
+  currency          String
+  status            PaymentStatus @default(PENDING)
+  checkoutUrl       String
+  customerName      String
+  customerPhone     String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([organizationId, createdAt])
 }
 
 // ---------------------------------------------------------------------------

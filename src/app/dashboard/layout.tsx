@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { getCurrentUser } from '@/lib/session';
 import { SignOutButton } from './SignOutButton';
+import { SidebarNav } from './SidebarNav';
 
 const NAV = [
   { href: '/dashboard', label: 'Overview' },
@@ -23,17 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
         <div className="mb-8 px-2 text-lg font-bold text-brand-700">GeoLock</div>
-        <nav className="flex-1 space-y-1">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav items={NAV} />
         <div className="border-t border-slate-200 pt-4">
           <p className="truncate px-2 text-xs text-slate-400">{user.email}</p>
           <SignOutButton />
