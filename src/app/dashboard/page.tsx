@@ -47,32 +47,34 @@ export default async function OverviewPage() {
         {recent.length === 0 ? (
           <p className="text-sm text-slate-500">No verifications yet. Create a project and API key to get started.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="pb-2">ID</th>
-                <th className="pb-2">Location</th>
-                <th className="pb-2">Confidence</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Decision</th>
-                <th className="pb-2">When</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((v) => (
-                <tr key={v.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 font-mono text-xs">{v.id}</td>
-                  <td className="py-2">{[v.locationCity, v.locationCountry].filter(Boolean).join(', ') || '—'}</td>
-                  <td className="py-2">{v.confidence}</td>
-                  <td className="py-2">
-                    <StatusBadge status={v.status} />
-                  </td>
-                  <td className="py-2">{v.decision}</td>
-                  <td className="py-2 text-slate-500">{v.createdAt.toLocaleString()}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-slate-500">
+                  <th className="pb-2">ID</th>
+                  <th className="pb-2">Location</th>
+                  <th className="pb-2">Confidence</th>
+                  <th className="pb-2">Status</th>
+                  <th className="pb-2">Decision</th>
+                  <th className="pb-2">When</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {recent.map((v) => (
+                  <tr key={v.id} className="border-b border-slate-100 last:border-0">
+                    <td className="py-2 font-mono text-xs">{v.id}</td>
+                    <td className="py-2">{[v.locationCity, v.locationCountry].filter(Boolean).join(', ') || '—'}</td>
+                    <td className="py-2">{v.confidence}</td>
+                    <td className="py-2">
+                      <StatusBadge status={v.status} />
+                    </td>
+                    <td className="py-2">{v.decision}</td>
+                    <td className="py-2 text-slate-500">{v.createdAt.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

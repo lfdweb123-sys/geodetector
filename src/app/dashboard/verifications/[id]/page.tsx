@@ -70,31 +70,33 @@ export default async function VerificationDetailPage({ params }: { params: { id:
 
       <div className="card">
         <h2 className="mb-3 text-lg font-medium">Evidence trail</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
-              <th className="pb-2">Signal</th>
-              <th className="pb-2">Category</th>
-              <th className="pb-2">Contribution</th>
-              <th className="pb-2">Source</th>
-              <th className="pb-2">Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {evidence.map((e, i) => (
-              <tr key={i} className="border-b border-slate-100 last:border-0">
-                <td className="py-2 font-mono text-xs">{e.key}</td>
-                <td className="py-2 text-xs">{e.category}</td>
-                <td className={`py-2 font-medium ${e.contribution >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {e.contribution >= 0 ? '+' : ''}
-                  {e.contribution}
-                </td>
-                <td className="py-2 text-xs text-slate-500">{e.source}</td>
-                <td className="py-2 text-xs">{e.reason}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-slate-500">
+                <th className="pb-2">Signal</th>
+                <th className="pb-2">Category</th>
+                <th className="pb-2">Contribution</th>
+                <th className="pb-2">Source</th>
+                <th className="pb-2">Reason</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {evidence.map((e, i) => (
+                <tr key={i} className="border-b border-slate-100 last:border-0">
+                  <td className="py-2 font-mono text-xs">{e.key}</td>
+                  <td className="py-2 text-xs">{e.category}</td>
+                  <td className={`py-2 font-medium ${e.contribution >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {e.contribution >= 0 ? '+' : ''}
+                    {e.contribution}
+                  </td>
+                  <td className="py-2 text-xs text-slate-500">{e.source}</td>
+                  <td className="py-2 text-xs">{e.reason}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

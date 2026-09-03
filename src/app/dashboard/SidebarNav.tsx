@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import { isNavItemActive } from './navActive';
 
 export interface NavItem {
   href: string;
@@ -15,7 +16,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
   return (
     <nav className="flex-1 space-y-1">
       {items.map((item) => {
-        const active = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
+        const active = isNavItemActive(pathname, item.href);
         return (
           <Link
             key={item.href}

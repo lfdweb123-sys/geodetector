@@ -58,32 +58,34 @@ export default async function BillingPage() {
           {payments.length === 0 ? (
             <p className="text-sm text-slate-500">Aucun paiement pour le moment.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-slate-500">
-                  <th className="pb-2">Plan visé</th>
-                  <th className="pb-2">Montant</th>
-                  <th className="pb-2">Statut</th>
-                  <th className="pb-2">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((p) => (
-                  <tr key={p.id} className="border-b border-slate-100 last:border-0">
-                    <td className="py-2">{p.targetPlan}</td>
-                    <td className="py-2">
-                      {new Intl.NumberFormat('fr-FR').format(p.amount)} {p.currency}
-                    </td>
-                    <td className="py-2">
-                      <span className={`badge ${PAYMENT_STATUS_STYLE[p.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td className="py-2 text-slate-500">{p.createdAt.toLocaleString()}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-slate-500">
+                    <th className="pb-2">Plan visé</th>
+                    <th className="pb-2">Montant</th>
+                    <th className="pb-2">Statut</th>
+                    <th className="pb-2">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr key={p.id} className="border-b border-slate-100 last:border-0">
+                      <td className="py-2">{p.targetPlan}</td>
+                      <td className="py-2">
+                        {new Intl.NumberFormat('fr-FR').format(p.amount)} {p.currency}
+                      </td>
+                      <td className="py-2">
+                        <span className={`badge ${PAYMENT_STATUS_STYLE[p.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="py-2 text-slate-500">{p.createdAt.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -27,7 +27,7 @@ export default async function VerificationsPage({
         <p className="text-slate-500">Every decision, with the evidence and reasons behind it.</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {projects.map((p) => (
           <Link
             key={p.id}
@@ -43,44 +43,49 @@ export default async function VerificationsPage({
         {verifications.length === 0 ? (
           <p className="text-sm text-slate-500">No verifications for this project yet.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="pb-2">ID</th>
-                <th className="pb-2">Session</th>
-                <th className="pb-2">Location</th>
-                <th className="pb-2">Confidence</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Decision</th>
-                <th className="pb-2">VPN</th>
-                <th className="pb-2">Mock GPS</th>
-                <th className="pb-2">When</th>
-              </tr>
-            </thead>
-            <tbody>
-              {verifications.map((v) => (
-                <tr key={v.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2">
-                    <Link href={`/dashboard/verifications/${v.id}`} className="font-mono text-xs text-brand-700 hover:underline">
-                      {v.id}
-                    </Link>
-                  </td>
-                  <td className="py-2 font-mono text-xs">{v.sessionId}</td>
-                  <td className="py-2">{[v.locationCity, v.locationCountry].filter(Boolean).join(', ') || '—'}</td>
-                  <td className="py-2">{v.confidence}</td>
-                  <td className="py-2">
-                    <StatusBadge status={v.status} />
-                  </td>
-                  <td className="py-2">
-                    <StatusBadge status={v.decision} />
-                  </td>
-                  <td className="py-2">{v.vpnDetected ? 'yes' : 'no'}</td>
-                  <td className="py-2">{v.mockLocationStatus}</td>
-                  <td className="py-2 text-slate-500">{v.createdAt.toLocaleString()}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-slate-500">
+                  <th className="pb-2">ID</th>
+                  <th className="pb-2">Session</th>
+                  <th className="pb-2">Location</th>
+                  <th className="pb-2">Confidence</th>
+                  <th className="pb-2">Status</th>
+                  <th className="pb-2">Decision</th>
+                  <th className="pb-2">VPN</th>
+                  <th className="pb-2">Mock GPS</th>
+                  <th className="pb-2">When</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {verifications.map((v) => (
+                  <tr key={v.id} className="border-b border-slate-100 last:border-0">
+                    <td className="py-2">
+                      <Link
+                        href={`/dashboard/verifications/${v.id}`}
+                        className="font-mono text-xs text-brand-700 hover:underline"
+                      >
+                        {v.id}
+                      </Link>
+                    </td>
+                    <td className="py-2 font-mono text-xs">{v.sessionId}</td>
+                    <td className="py-2">{[v.locationCity, v.locationCountry].filter(Boolean).join(', ') || '—'}</td>
+                    <td className="py-2">{v.confidence}</td>
+                    <td className="py-2">
+                      <StatusBadge status={v.status} />
+                    </td>
+                    <td className="py-2">
+                      <StatusBadge status={v.decision} />
+                    </td>
+                    <td className="py-2">{v.vpnDetected ? 'yes' : 'no'}</td>
+                    <td className="py-2">{v.mockLocationStatus}</td>
+                    <td className="py-2 text-slate-500">{v.createdAt.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

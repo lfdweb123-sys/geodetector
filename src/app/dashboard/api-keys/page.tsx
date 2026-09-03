@@ -27,44 +27,46 @@ export default async function ApiKeysPage() {
           ) : keys.length === 0 ? (
             <p className="text-sm text-slate-500">No API keys yet.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-slate-500">
-                  <th className="pb-2">Prefix</th>
-                  <th className="pb-2">Name</th>
-                  <th className="pb-2">Project</th>
-                  <th className="pb-2">Last used</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {keys.map((k) => (
-                  <tr key={k.id} className="border-b border-slate-100 last:border-0">
-                    <td className="py-2 font-mono text-xs">{k.prefix}…</td>
-                    <td className="py-2">{k.name}</td>
-                    <td className="py-2">{k.project.name}</td>
-                    <td className="py-2 text-slate-500">{k.lastUsedAt ? k.lastUsedAt.toLocaleString() : 'never'}</td>
-                    <td className="py-2">
-                      {k.revokedAt ? (
-                        <span className="badge bg-slate-100 text-slate-500">revoked</span>
-                      ) : (
-                        <span className="badge bg-emerald-100 text-emerald-700">active</span>
-                      )}
-                    </td>
-                    <td className="py-2 text-right">
-                      {!k.revokedAt && (
-                        <form action={revokeApiKeyAction.bind(null, k.id)}>
-                          <button type="submit" className="btn-danger text-xs">
-                            Revoke
-                          </button>
-                        </form>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-slate-500">
+                    <th className="pb-2">Prefix</th>
+                    <th className="pb-2">Name</th>
+                    <th className="pb-2">Project</th>
+                    <th className="pb-2">Last used</th>
+                    <th className="pb-2">Status</th>
+                    <th className="pb-2" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {keys.map((k) => (
+                    <tr key={k.id} className="border-b border-slate-100 last:border-0">
+                      <td className="py-2 font-mono text-xs">{k.prefix}…</td>
+                      <td className="py-2">{k.name}</td>
+                      <td className="py-2">{k.project.name}</td>
+                      <td className="py-2 text-slate-500">{k.lastUsedAt ? k.lastUsedAt.toLocaleString() : 'never'}</td>
+                      <td className="py-2">
+                        {k.revokedAt ? (
+                          <span className="badge bg-slate-100 text-slate-500">revoked</span>
+                        ) : (
+                          <span className="badge bg-emerald-100 text-emerald-700">active</span>
+                        )}
+                      </td>
+                      <td className="py-2 text-right">
+                        {!k.revokedAt && (
+                          <form action={revokeApiKeyAction.bind(null, k.id)}>
+                            <button type="submit" className="btn-danger text-xs">
+                              Revoke
+                            </button>
+                          </form>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
