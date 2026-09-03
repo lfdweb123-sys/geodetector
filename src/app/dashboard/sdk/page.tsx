@@ -16,6 +16,15 @@ if (result.location_verified) {
   // result.status, result.reasons, result.confidence
 }`;
 
+const SCRIPT_TAG_SNIPPET = `<script src="https://your-deployment.vercel.app/geolock.umd.js"></script>
+<script>
+  GeoLock.verify({ country: 'BJ', requireLocation: true }).then((result) => {
+    if (result.location_verified) {
+      // decision === 'ACCEPT'
+    }
+  });
+</script>`;
+
 const CURL_SNIPPET = `curl -X POST https://your-deployment.vercel.app/v1/verifications \\
   -H "Authorization: Bearer $GEOLOCK_API_KEY" \\
   -H "Content-Type: application/json" \\
@@ -26,6 +35,35 @@ const CURL_SNIPPET = `curl -X POST https://your-deployment.vercel.app/v1/verific
     "client": { "timezone": "Africa/Porto-Novo", "language": "fr-BJ" }
   }'`;
 
+const PYTHON_SNIPPET = `import requests
+
+res = requests.post(
+    "https://your-deployment.vercel.app/v1/verifications",
+    headers={"Authorization": f"Bearer {GEOLOCK_API_KEY}"},
+    json={
+        "session_id": "session_123",
+        "required_country": "BJ",
+        "location": {"latitude": 6.3703, "longitude": 2.3912, "accuracy": 18, "timestamp": 1788390000000},
+    },
+)
+result = res.json()`;
+
+const PHP_SNIPPET = `$ch = curl_init('https://your-deployment.vercel.app/v1/verifications');
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer ' . $GEOLOCK_API_KEY,
+        'Content-Type: application/json',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'session_id' => 'session_123',
+        'required_country' => 'BJ',
+        'location' => ['latitude' => 6.3703, 'longitude' => 2.3912, 'accuracy' => 18, 'timestamp' => 1788390000000],
+    ]),
+]);
+$result = json_decode(curl_exec($ch), true);`;
+
 export default async function SdkPage({ searchParams }: { searchParams: { projectId?: string } }) {
   const user = await getCurrentUser();
   const projects = await prisma.project.findMany({ where: { organizationId: user!.organizationId } });
@@ -35,21 +73,49 @@ export default async function SdkPage({ searchParams }: { searchParams: { projec
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">SDK &amp; Tests</h1>
-        <p className="text-slate-500">Extraits d'intégration, et un testeur en direct qui exécute le vrai pipeline de détection.</p>
+        <p className="text-slate-500">
+          L'API GeoLock est du JSON brut sur HTTPS - n'importe quel site web, application mobile, logiciel ou service
+          capable d'envoyer une requête HTTP peut s'y intégrer, avec ou sans nos SDK.
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card">
-          <h2 className="mb-2 text-lg font-medium">Web SDK</h2>
+          <h2 className="mb-2 text-lg font-medium">Web SDK (npm/bundler)</h2>
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100">{WEB_SNIPPET}</pre>
           <p className="mt-2 text-xs text-slate-500">
-            npm install @geolock/web · see sdk/web/README.md for the recommended backend-proxy pattern (never embed a
-            secret key in browser code).
+            npm install @geolock/web · voir sdk/web/README.md pour le proxy backend recommandé (ne jamais exposer une
+            clé secrète côté navigateur).
           </p>
         </div>
         <div className="card">
-          <h2 className="mb-2 text-lg font-medium">Server-to-server (any language)</h2>
+          <h2 className="mb-2 text-lg font-medium">N'importe quel site (balise script, sans build)</h2>
+          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100">{SCRIPT_TAG_SNIPPET}</pre>
+          <p className="mt-2 text-xs text-slate-500">
+            WordPress, page statique, no-code, CMS... aucun outil de build requis - expose window.GeoLock.
+          </p>
+        </div>
+        <div className="card">
+          <h2 className="mb-2 text-lg font-medium">Serveur à serveur (curl / n'importe quel langage)</h2>
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100">{CURL_SNIPPET}</pre>
+        </div>
+        <div className="card">
+          <h2 className="mb-2 text-lg font-medium">Python</h2>
+          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100">{PYTHON_SNIPPET}</pre>
+        </div>
+        <div className="card">
+          <h2 className="mb-2 text-lg font-medium">PHP</h2>
+          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100">{PHP_SNIPPET}</pre>
+        </div>
+        <div className="card">
+          <h2 className="mb-2 text-lg font-medium">Applications mobiles &amp; logiciels natifs</h2>
+          <p className="text-sm text-slate-600">
+            Android, iOS, Flutter, React Native : voir <code className="text-xs">sdk/android</code>,{' '}
+            <code className="text-xs">sdk/ios</code>, <code className="text-xs">sdk/flutter</code>,{' '}
+            <code className="text-xs">sdk/react-native</code> dans le dépôt. Pour tout autre logiciel (desktop, IoT,
+            backend interne...), la même API REST s'utilise directement - il suffit de savoir envoyer une requête
+            HTTPS.
+          </p>
         </div>
       </div>
 

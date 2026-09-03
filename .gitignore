@@ -11,3 +11,4 @@ coverage
 .vercel
 sdk/*/node_modules
 sdk/*/dist
+public/geolock.umd.js

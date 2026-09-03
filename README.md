@@ -13,6 +13,24 @@ technically possible, and why the scoring model is built the way it is.
 `docs/SECURITY.md` and `docs/PRIVACY.md` cover the security model and
 privacy-by-design choices.
 
+## Integrating anywhere
+
+The core API (`POST /v1/verifications`) is plain JSON over HTTPS with no
+SDK dependency, so anything capable of an HTTPS request can integrate
+directly: a website, a native mobile app, a desktop application, a backend
+service in any language, an embedded/IoT device. On top of that universal
+path, GeoLock ships:
+
+- `sdk/web` - a browser SDK available both as an npm package (`@geolock/web`)
+  and as a self-contained `<script>`-tag bundle (`dist/geolock.umd.js`,
+  built by `npm run sdk:build`) for sites with no build step at all -
+  WordPress, a static HTML page, a page builder, a CMS snippet.
+- `sdk/android`, `sdk/ios`, `sdk/flutter`, `sdk/react-native` - reference
+  scaffolds for native mobile apps, documenting exactly which official
+  platform APIs back each signal.
+- The dashboard's **SDK & Tests** page shows ready-to-copy snippets for the
+  Web SDK, the script tag, curl, Python and PHP.
+
 ## Project layout
 
 ```

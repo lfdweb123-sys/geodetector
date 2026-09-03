@@ -4,6 +4,29 @@ Browser SDK for GeoLock multi-signal location verification.
 
 ## Install
 
+Two ways to get the SDK into a page - pick whichever matches your stack.
+
+**Any website, no build step (WordPress, static HTML, a page builder, a
+`<script>` tag pasted into a CMS):**
+
+```html
+<script src="https://your-cdn-or-deployment/geolock.umd.js"></script>
+<script>
+  GeoLock.verify({ country: 'BJ', requireLocation: true }).then((result) => {
+    if (result.location_verified) {
+      // decision === 'ACCEPT'
+    }
+  });
+</script>
+```
+
+Host `dist/geolock.umd.js` (built below) on your own static hosting/CDN
+alongside your GeoLock deployment, or serve it from the deployment itself. It
+attaches a single global, `window.GeoLock`, with the exact same `verify()`
+API as the npm package - nothing else on `window` is touched.
+
+**npm / a bundler (Next.js, Vite, webpack, Remix, plain React...):**
+
 ```bash
 npm install @geolock/web
 ```
@@ -58,3 +81,24 @@ if (result.location_verified) {
 See `GeoLockVerifyOptions` in `src/index.ts` for the full list (country,
 requireLocation, endpoint, apiBaseUrl/apiKey for advanced direct mode,
 sessionId, showConsentUI, consentMessage, timeout).
+
+## Building
+
+```bash
+npm run build
+```
+
+Produces both `dist/index.js` (ES module, for `import`) and
+`dist/geolock.umd.js` (a self-contained IIFE bundle for a plain `<script>`
+tag - no bundler, no `type="module"` required).
+
+## Beyond the browser
+
+This SDK only covers browser-based websites. Anything else that can make an
+HTTPS request - a native mobile app, a desktop application, a backend
+service in any language, an embedded device - integrates the same detection
+engine directly against the REST API (`POST /v1/verifications`), which is
+plain JSON over HTTPS with no SDK dependency at all. See
+`sdk/android`, `sdk/ios`, `sdk/flutter`, `sdk/react-native` for
+platform-specific reference code, and the root README / `docs/openapi.yaml`
+for the API itself.

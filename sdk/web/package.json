@@ -5,10 +5,17 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/geolock.umd.js",
+  "browser": "./dist/geolock.umd.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json && npm run build:umd",
+    "build:umd": "esbuild src/index.ts --bundle --format=iife --global-name=GeoLockBundle --outfile=dist/geolock.umd.js --footer:js=\"window.GeoLock = window.GeoLock || GeoLockBundle.default;\""
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "typescript": "^5.6.2"
   }
 }

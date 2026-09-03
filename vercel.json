@@ -1,4 +1,4 @@
 {
-  "buildCommand": "prisma generate && prisma migrate deploy && next build",
+  "buildCommand": "npm run sdk:build && mkdir -p public && cp sdk/web/dist/geolock.umd.js public/geolock.umd.js && prisma generate && prisma migrate deploy && next build",
   "framework": "nextjs"
 }
